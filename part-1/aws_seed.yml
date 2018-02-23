@@ -77,10 +77,27 @@ Resources:
           PolicyDocument:
             Statement:
               - Action:
-                  - 'codecommit:*'
-                  - 'codebuild:*'
-                  - 's3:*'
-                  - 'cloudformation:*'
+                  - codecommit:GetBranch
+                  - codecommit:GetCommit
+                  - codecommit:UploadArchive
+                  - codecommit:GetUploadArchiveStatus
+                  - codecommit:CancelUploadArchive
+
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+
+                  - cloudformation:DescribeStacks
+                  - cloudformation:GetTemplate
+                  - cloudformation:DescribeStackResource
+                  - cloudformation:DescribeStackResources
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:DescribeStacks
+                  - cloudformation:UpdateStack
+
                   - 'iam:PassRole'
                 Resource: '*'
                 Effect: Allow
