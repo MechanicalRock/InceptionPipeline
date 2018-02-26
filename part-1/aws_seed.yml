@@ -89,14 +89,15 @@ Resources:
                   - s3:GetObject
                   - s3:GetObjectVersion
                   - s3:GetBucketVersioning
+                  - s3:PutObject
 
-                  - cloudformation:DescribeStacks
                   - cloudformation:GetTemplate
                   - cloudformation:DescribeStackResource
                   - cloudformation:DescribeStackResources
                   - cloudformation:DescribeStackEvents
                   - cloudformation:DescribeStacks
                   - cloudformation:UpdateStack
+                  - cloudformation:CreateStack
 
                   - 'iam:PassRole'
                 Resource: '*'
