@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
+Description: Website management pipeline
 
 Parameters: 
   RepositoryName: 
@@ -19,6 +20,9 @@ Parameters:
   StageAdministerPipelineStackName:
     Type: String
     Description: The name of this stack that is creating the pipeline. If the names do not match then the pipeline will not be able to update itself.
+  StageAdministerInfrastructureStackName:
+    Type: String
+    Description: The name of the stack that administers the website infrastructure
                                                   
 Resources:
 
@@ -54,8 +58,10 @@ Resources:
                   - 'codecommit:*'
                   - 'cloudformation:*'
                   - 'codepipeline:*'
+                  - 'cloudfront:*'
                   - 'iam:*'
                   - 's3:*'
+                  - 'route53:*'
                 Effect: Allow
                 Resource: '*'
       RoleName: !Ref CloudFormationDeployActionRoleName 
@@ -98,6 +104,7 @@ Resources:
                   - cloudformation:DescribeStacks
                   - cloudformation:UpdateStack
                   - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
 
                   - 'iam:PassRole'
                 Resource: '*'
@@ -150,6 +157,23 @@ Resources:
               InputArtifacts:
                 - Name: !Join ['', [!Ref RepositoryName, 'Source']]
               RunOrder: '1'
+        - Name: 'AdministerInfrastructure'
+          Actions:
+            - Name: 'AdministerWebsiteInfrastructure'
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                RoleArn: !GetAtt [CloudFormationDeployActionRole, Arn]
+                StackName: !Ref StageAdministerInfrastructureStackName
+                TemplateConfiguration: !Join ['', [!Ref RepositoryName, 'Source', '::aws_infrastructure.json']]
+                TemplatePath: !Join ['', [!Ref RepositoryName, 'Source', '::aws_infrastructure.yml']]
+              InputArtifacts:
+                - Name: !Join ['', [!Ref RepositoryName, 'Source']]
+              RunOrder: '10'
 
 Outputs:
   CodeCommitRepositoryArn:
