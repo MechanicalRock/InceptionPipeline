@@ -22,5 +22,13 @@
     {
         "ParameterKey": "StageAdministerPipelineStackName",
         "ParameterValue": "@@StageAdministerPipelineStackName@@"
+    },
+    {
+        "ParameterKey": "StageDevelopmentInfrastructureStackName",
+        "ParameterValue": "@@StageDevelopmentInfrastructureStackName@@"
+    },
+    {
+        "ParameterKey": "StageProductionInfrastructureStackName",
+        "ParameterValue": "@@StageProductionInfrastructureStackName@@"
     }
 ]

@@ -1,0 +1,9 @@
+{
+    "Parameters": {
+        "CloudFormationAssumeRoleName": "CloudFormationAssumeRole",
+        "CloudFormationDeployerRoleName": "CloudFormationDeployerRole",
+        "OtherAwsAccountId": "@@OTHER_AWS_ACCOUNT_ID@@",
+        "OtherAwsAccountKmsKeyArn": "@@OTHER_AWS_ACCOUNT_KMS_KEY_ARN@@",
+        "OtherAwsAccountS3BucketName": "@@OTHER_AWS_ACCOUNT_S3_BUCKETNAME@@"
+    }
+}

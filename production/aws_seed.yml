@@ -1,7 +1,8 @@
 AWSTemplateFormatVersion: 2010-09-09
+Description: Inception Pipeline - Part 3
 
-Parameters: 
-  RepositoryName: 
+Parameters:
+  RepositoryName:
     Type: String
     Description: The name of the CodeCommit repository to create
   CodePipelineS3BucketName:
@@ -19,7 +20,10 @@ Parameters:
   StageAdministerPipelineStackName:
     Type: String
     Description: The name of this stack that is creating the pipeline. If the names do not match then the pipeline will not be able to update itself.
-                                                  
+  StageAdministerAccountStackName:
+    Type: String
+    Description: The name of the stack that administers the Account.
+
 Resources:
 
   CodeCommitRepository:
@@ -58,7 +62,7 @@ Resources:
                   - 's3:*'
                 Effect: Allow
                 Resource: '*'
-      RoleName: !Ref CloudFormationDeployActionRoleName 
+      RoleName: !Ref CloudFormationDeployActionRoleName
 
   CodePipelineRole:
     Type: 'AWS::IAM::Role'
@@ -98,16 +102,17 @@ Resources:
                   - cloudformation:DescribeStacks
                   - cloudformation:UpdateStack
                   - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
 
                   - 'iam:PassRole'
                 Resource: '*'
                 Effect: Allow
             Version: 2012-10-17
-      RoleName: !Ref CodePipelineRoleName 
+      RoleName: !Ref CodePipelineRoleName
 
   CodePipeline:
     Type: 'AWS::CodePipeline::Pipeline'
-    DependsOn: 
+    DependsOn:
       - CodePipelineRole
     Properties:
       ArtifactStore:
@@ -141,12 +146,30 @@ Resources:
                 Provider: CloudFormation
                 Version: '1'
               Configuration:
-                ActionMode: REPLACE_ON_FAILURE 
+                ActionMode: REPLACE_ON_FAILURE
                 Capabilities: CAPABILITY_NAMED_IAM
                 RoleArn: !GetAtt [CloudFormationDeployActionRole, Arn]
                 StackName: !Ref StageAdministerPipelineStackName
                 TemplateConfiguration: !Join ['', [!Ref RepositoryName, 'Source', '::aws_seed.json']]
                 TemplatePath: !Join ['', [!Ref RepositoryName, 'Source', '::aws_seed.yml']]
+              InputArtifacts:
+                - Name: !Join ['', [!Ref RepositoryName, 'Source']]
+              RunOrder: '1'
+        - Name: 'AdministerAccount'
+          Actions:
+            - Name: 'AdministerAccountIam'
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt [CloudFormationDeployActionRole, Arn]
+                StackName: !Ref StageAdministerAccountStackName
+                TemplateConfiguration: !Join ['', [!Ref RepositoryName, 'Source', '::aws_capability_iam.json']]
+                TemplatePath: !Join ['', [!Ref RepositoryName, 'Source', '::aws_capability_iam.yml']]
               InputArtifacts:
                 - Name: !Join ['', [!Ref RepositoryName, 'Source']]
               RunOrder: '1'
