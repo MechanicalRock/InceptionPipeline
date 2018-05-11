@@ -1,3 +1,4 @@
-cls
-REM dot -Ksfdp -o cross-account.png -Tpng cross-account.dot
-dot -o cross-account.png -Tpng cross-account.dot
+# How to generate
+
+1. Install [Graphiz](https://www.graphviz.org/download/)
+2. Run: <br /> `dot -o cross-account.png -Tpng cross-account.dot`
