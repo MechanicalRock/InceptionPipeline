@@ -6,6 +6,6 @@
         "CodePipelineRoleName": "@@CodePipelineRole@@",
         "CodePipelineName": "@@CodePipelineName@@",
         "StageAdministerPipelineStackName": "@@StageAdministerPipelineStackName@@",
-        "StageAdministerAccountStackName": "@@StageAdministerPipelineStackName@@"
+        "StageAdministerAccountStackName": "@@StageAdministerAccountStackName@@"
     }
 }
