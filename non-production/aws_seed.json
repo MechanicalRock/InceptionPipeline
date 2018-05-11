@@ -7,6 +7,7 @@
         "CodePipelineName": "@@CodePipelineName@@",
         "StageAdministerPipelineStackName": "@@StageAdministerPipelineStackName@@",
         "StageDevelopmentInfrastructureStackName": "@@StageDevelopmentInfrastructureStackName@@",
-        "StageProductionInfrastructureStackName": "@@StageProductionInfrastructureStackName@@"
+        "StageProductionInfrastructureStackName": "@@StageProductionInfrastructureStackName@@",
+        "ProductionAccount": "@@ProductionAccount@@"
     }
 }

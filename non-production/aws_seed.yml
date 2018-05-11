@@ -26,6 +26,9 @@ Parameters:
   StageProductionInfrastructureStackName:
     Type: String
     Description: The name of the stack that administers the Production website infrastructure.
+  ProductionAccount:
+    Type: string
+    Description: The AWS Account number of the production account.
 
 Resources:
 
@@ -54,10 +57,10 @@ Resources:
               - !Sub arn:aws:s3:::${CodePipelineBucket}/*
             Principal:
               AWS:
-                - !Sub arn:aws:iam::753747236498:role/${CodePipelineRoleName}
-                - !Sub arn:aws:iam::753747236498:role/${CloudFormationDeployActionRoleName}
-                - !Sub arn:aws:iam::245409447677:role/CloudFormationAssumeRole
-                - !Sub arn:aws:iam::245409447677:role/CloudFormationDeployerRole
+                - !Sub arn:aws:iam::${AWS::AccountId}:role/${CodePipelineRoleName}
+                - !Sub arn:aws:iam::${AWS::AccountId}:role/${CloudFormationDeployActionRoleName}
+                - !Sub arn:aws:iam::${ProductionAccount}:role/CloudFormationAssumeRole
+                - !Sub arn:aws:iam::${ProductionAccount}:role/CloudFormationDeployerRole
 
   CloudFormationDeployActionRole:
     Type: 'AWS::IAM::Role'
@@ -68,7 +71,7 @@ Resources:
           Effect: Allow
           Principal:
             Service: [cloudformation.amazonaws.com]
-        Version: '2012-10-17'
+        Version: '2012-10-17'ProductionAccount
       Path: /
       Policies:
         - PolicyName: CloudFormationRole
@@ -135,7 +138,7 @@ Resources:
                 Effect: Allow
               - Action: ['sts:AssumeRole']
                 Effect: Allow
-                Resource: ['arn:aws:iam::245409447677:role/CloudFormationAssumeRole']
+                Resource: !Join ['', ['arn:aws:iam::', !Ref ProductionAccount, ':role/CloudFormationAssumeRole']]
             Version: 2012-10-17
       RoleName: !Ref CodePipelineRoleName
 
@@ -216,13 +219,13 @@ Resources:
               Configuration:
                 ActionMode: REPLACE_ON_FAILURE
                 Capabilities: CAPABILITY_NAMED_IAM
-                RoleArn: 'arn:aws:iam::245409447677:role/CloudFormationDeployerRole'
+                RoleArn: !Join ['', ['arn:aws:iam::', !Ref ProductionAccount, ':role/CloudFormationDeployerRole']]
                 StackName: !Ref StageProductionInfrastructureStackName
                 TemplateConfiguration: !Join ['', [!Ref RepositoryName, 'Source', '::aws_infrastructure_production.json']]
                 TemplatePath: !Join ['', [!Ref RepositoryName, 'Source', '::aws_infrastructure.yml']]
               InputArtifacts:
                 - Name: !Join ['', [!Ref RepositoryName, 'Source']]
-              RoleArn: 'arn:aws:iam::245409447677:role/CloudFormationAssumeRole'
+              RoleArn: !Join ['', ['arn:aws:iam::', !Ref ProductionAccount, ':role/CloudFormationAssumeRole']]
               RunOrder: '10'
 
   KMSKey:
@@ -248,8 +251,8 @@ Resources:
             Effect: Allow
             Principal:
               AWS:
-                - !Sub arn:aws:iam::245409447677:root
-                # If adding additional accounts put them just in here! and add the parameter up the top!
+                - !Sub arn:aws:iam::${ProductionAccount}:root
+                # If adding additional accounts put them just in here and add the parameter up the top!
             Action:
               - kms:Encrypt
               - kms:Decrypt
