@@ -134,6 +134,12 @@ Resources:
                   - cloudformation:DeleteStack
 
                   - 'iam:PassRole'
+
+                  - kms:Encrypt
+                  - kms:Decrypt
+                  - kms:ReEncrypt*
+                  - kms:GenerateDataKey*
+                  - kms:DescribeKey
                 Resource: '*'
                 Effect: Allow
               - Action: ['sts:AssumeRole']
