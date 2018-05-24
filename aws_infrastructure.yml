@@ -56,7 +56,7 @@ Resources:
     Type: "AWS::CloudFront::Distribution"
     DependsOn:
       - S3WebsiteBucketPolicy
-      - S3CloudFrontLogsBucket.
+      - S3CloudFrontLogsBucket
     Properties:
       DistributionConfig: 
         Aliases:
