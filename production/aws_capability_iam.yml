@@ -8,13 +8,13 @@ Parameters:
     Type: String
     Description: The name of the role that performs the CloudFormation deployment
   OtherAwsAccountId:
-    Type: string
+    Type: String
     Description: The AWS Account ID of the other account that you want to grant cross-account access to.
   OtherAwsAccountKmsKeyArn:
-    Type: string
+    Type: String
     Description: The arn of the KMS key in the other AWS Account. A shared KMS key is required for access to the S3 bucket containing the build artifacts.
   OtherAwsAccountS3BucketName:
-    Type: string
+    Type: String
     Description: The name of the S3 bucket in the other account that holds the build artifacts.
 
 Resources:
@@ -53,7 +53,7 @@ Resources:
                   - 'kms:Decrypt'
                   - 'kms:ReEncrypt*'
                   - 'kms:GenerateDataKey*'
-                  - 'kms':DescribeKey
+                  - 'kms:DescribeKey'
                 Resource:
                    - !Ref OtherAwsAccountKmsKeyArn
                 Effect: Allow

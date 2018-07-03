@@ -27,7 +27,7 @@ Parameters:
     Type: String
     Description: The name of the stack that administers the Production website infrastructure.
   ProductionAccount:
-    Type: string
+    Type: String
     Description: The AWS Account number of the production account.
 
 Resources:
@@ -71,7 +71,7 @@ Resources:
           Effect: Allow
           Principal:
             Service: [cloudformation.amazonaws.com]
-        Version: '2012-10-17'ProductionAccount
+        Version: '2012-10-17'
       Path: /
       Policies:
         - PolicyName: CloudFormationRole
@@ -87,7 +87,7 @@ Resources:
                   - 'iam:*'
                   - 's3:*'
                   - 'route53:*'
-                  - 'kms:*
+                  - 'kms:*'
                 Effect: Allow
                 Resource: '*'
       RoleName: !Ref CloudFormationDeployActionRoleName
@@ -195,7 +195,7 @@ Resources:
                 TemplatePath: !Join ['', [!Ref RepositoryName, 'Source', '::aws_seed.yml']]
               InputArtifacts:
                 - Name: !Join ['', [!Ref RepositoryName, 'Source']]
-              RunOrder: '1'
+              RunOrder: 1
         - Name: 'Development'
           Actions:
             - Name: 'Infrastructure'
@@ -213,7 +213,7 @@ Resources:
                 TemplatePath: !Join ['', [!Ref RepositoryName, 'Source', '::aws_infrastructure.yml']]
               InputArtifacts:
                 - Name: !Join ['', [!Ref RepositoryName, 'Source']]
-              RunOrder: '10'
+              RunOrder: 10
         - Name: 'Production'
           Actions:
             - Name: 'Infrastructure'
@@ -232,7 +232,7 @@ Resources:
               InputArtifacts:
                 - Name: !Join ['', [!Ref RepositoryName, 'Source']]
               RoleArn: !Join ['', ['arn:aws:iam::', !Ref ProductionAccount, ':role/CloudFormationAssumeRole']]
-              RunOrder: '10'
+              RunOrder: 10
 
   KMSKey:
     Type: AWS::KMS::Key

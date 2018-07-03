@@ -154,7 +154,7 @@ Resources:
                 TemplatePath: !Join ['', [!Ref RepositoryName, 'Source', '::aws_seed.yml']]
               InputArtifacts:
                 - Name: !Join ['', [!Ref RepositoryName, 'Source']]
-              RunOrder: '1'
+              RunOrder: 1
         - Name: 'AdministerAccount'
           Actions:
             - Name: 'AdministerAccountIam'
@@ -172,7 +172,7 @@ Resources:
                 TemplatePath: !Join ['', [!Ref RepositoryName, 'Source', '::aws_capability_iam.yml']]
               InputArtifacts:
                 - Name: !Join ['', [!Ref RepositoryName, 'Source']]
-              RunOrder: '1'
+              RunOrder: 1
 
 Outputs:
   CodeCommitRepositoryArn:
