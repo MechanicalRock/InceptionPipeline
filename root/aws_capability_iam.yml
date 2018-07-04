@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Account IAM (Policy/Group/Role) capability
+
+Parameters:
+  ParamChildAccount:
+    Type: String
+    Description: The AWS Account Id of the child account, needed to grant cross-account access.
+  ParamChildAccountRoleName:
+    Type: String
+    Description: The IAM Name of the Developer role in the child AWS account; defaults to 'DeveloperRole'
+    Default: DeveloperRole
+
+Resources:
+
+  ChildDeveloperGroup:
+    Type: 'AWS::IAM::Group'
+    Properties:
+      GroupName: ChildDeveloperGroup
+
+  ChildDeveloperPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties: 
+      PolicyName: ChildDeveloperPolicy
+      Groups:
+        - !Ref ChildDeveloperGroup
+      PolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Resource: !Sub 'arn:aws:iam::${ParamChildAccount}:role/${ParamChildAccountRoleName}'
+
+Outputs:
+
+  ChildDeveloperPolicyName:
+    Description: ChildDeveloperPolicy Name
+    Value: !Ref ChildDeveloperPolicy
+  ChildDeveloperGroupName:
+    Description: ChildDeveloperGroup Name
+    Export:
+      Name: !Join ['', [!Ref 'AWS::StackName', 'ChildDeveloperGroupName']]
+    Value: !Ref ChildDeveloperGroup
+  ChildDeveloperGroupArn:
+    Description: ChildDeveloperGroup Arn
+    Value: !GetAtt ChildDeveloperGroup.Arn

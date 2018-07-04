@@ -1,0 +1,119 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Account IAM (Policy/Group/Role) capability
+
+Parameters:
+  ParamRootAccount:
+    Type: String
+    Description: The AWS Account Id of the root account, needed to grant cross-account access.
+  DeveloperRoleName:
+    Type: String
+    Description: The IAM Name of the Developer role; defaults to 'DeveloperRole'
+    Default: DeveloperRole
+
+Resources:
+
+  DeveloperRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: ['sts:AssumeRole']
+            Effect: 'Allow'
+            Principal:
+              AWS:
+                - !Sub 'arn:aws:iam::${ParamRootAccount}:root'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+      RoleName: !Ref DeveloperRoleName
+
+  DeveloperPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${DeveloperRoleName}Policy'
+      Roles:
+        - !Ref DeveloperRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+              - cloudformation:Describe*
+              - cloudformation:Get*
+              - cloudformation:List*
+
+              - codebuild:BatchGetBuilds
+              - codebuild:BatchGetProjects
+              - codebuild:ListBuilds
+              - codebuild:ListBuildsForProject
+              - codebuild:ListCuratedEnvironmentImages
+              - codebuild:ListProjects
+              - codebuild:StartBuild
+              - codebuild:StopBuild
+
+              - codecommit:BatchGetCommits
+              - codecommit:BatchGetPullRequests
+              - codecommit:BatchGetRepositories
+              - codecommit:CreateBranch
+              - codecommit:CreatePullRequest
+              - codecommit:DeleteBranch
+              - codecommit:DeleteCommentContent
+              - codecommit:DescribePullRequest
+              - codecommit:DescribePullRequestEvents
+              - codecommit:GetBlob
+              - codecommit:GetBranch
+              - codecommit:GetComment
+              - codecommit:GetCommentsForComparedCommit
+              - codecommit:GetCommentsForPullRequest
+              - codecommit:GetCommit
+              - codecommit:GetCommitHistory
+              - codecommit:GetCommitsFromMergeBase
+              - codecommit:GetDifferences
+              - codecommit:GetMergeConflicts
+              - codecommit:GetObjectIdentifier
+              - codecommit:GetReferences
+              - codecommit:GetRepository
+              - codecommit:GetTree
+              - codecommit:GitPull
+              - codecommit:GitPush
+              - codecommit:ListBranches
+              - codecommit:ListPullRequests
+              - codecommit:ListRepositories
+              - codecommit:MergePullRequestByFastForward
+              - codecommit:PostCommentForComparedCommit
+              - codecommit:PostCommentForPullRequest
+              - codecommit:PostCommentReply
+              - codecommit:PutFile
+              - codecommit:UpdateComment
+              - codecommit:UpdatePullRequestDescription
+              - codecommit:UpdatePullRequestStatus
+              - codecommit:UpdatePullRequestTitle
+
+              - codepipeline:Get*
+              - codepipeline:List*
+              - codepipeline:RetryStageExecution
+              - codepipeline:StartPipelineExecution
+
+              - logs:Describe*
+              - logs:Get*
+              - logs:List*
+
+              - s3:Get*
+              - s3:List*
+
+            Effect: Allow
+            Resource: 
+              - !Sub 'arn:aws:cloudformation:ap-southeast-2:${AWS::AccountId}:stack/*'
+              - !Sub 'arn:aws:codebuild:ap-southeast-2:${AWS::AccountId}:*'
+              - !Sub 'arn:aws:codecommit:ap-southeast-2:${AWS::AccountId}:*'
+              - !Sub 'arn:aws:codepipeline:ap-southeast-2:${AWS::AccountId}:*'
+              - !Sub 'arn:aws:logs:ap-southeast-2:${AWS::AccountId}:*'
+
+Outputs:
+  DeveloperPolicyName:
+    Description: DeveloperPolicy Name
+    Value: !Ref DeveloperPolicy
+  DeveloperRoleName:
+    Description: DeveloperRole Name
+    Value: !Ref DeveloperRole
+  DeveloperRoleArn:
+    Description: DeveloperRole Arn
+    Value: !GetAtt DeveloperRole.Arn

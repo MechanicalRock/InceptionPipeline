@@ -1,0 +1,34 @@
+[
+    {
+        "ParameterKey": "RepositoryName",
+        "ParameterValue": "@@RepositoryName@@"
+    },
+    {
+        "ParameterKey": "CodePipelineS3BucketName",
+        "ParameterValue": "@@CodePipelineS3BucketName@@"
+    },
+    {
+        "ParameterKey": "CloudFormationDeployActionRoleName",
+        "ParameterValue": "@@CloudFormationDeployActionRoleName@@"
+    },
+    {
+        "ParameterKey": "CodePipelineRoleName",
+        "ParameterValue": "@@CodePipelineRole@@"
+    },
+    {
+        "ParameterKey": "CodePipelineName",
+        "ParameterValue": "@@CodePipelineName@@"
+    },
+    {
+        "ParameterKey": "StageAdministerPipelineStackName",
+        "ParameterValue": "@@StageAdministerPipelineStackName@@"
+    },
+    {
+        "ParameterKey": "StageAdministerAccountCapabilityIamStackName",
+        "ParameterValue": "@@StageAdministerAccountCapabilityIamStackName@@"
+    },
+    {
+        "ParameterKey": "StageAdministerAccountCapabilityIamUsersStackName",
+        "ParameterValue": "@@StageAdministerAccountCapabilityIamUsersStackName@@"
+    }
+]

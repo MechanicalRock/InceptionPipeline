@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Account IAM User capability
+
+Resources:
+
+  DeveloperPete:
+    Type: "AWS::IAM::User"
+    Properties: 
+      LoginProfile:
+        Password: Dummy12321ymmuD
+        PasswordResetRequired: true
+      UserName: Pete
+
+  AddUsersToChildDeveloperGroup:
+    Type: AWS::IAM::UserToGroupAddition
+    Properties:
+      GroupName: !ImportValue 'RootAccountCapabilityIamChildDeveloperGroupName'
+      Users:
+        - !Ref DeveloperPete
+
+Outputs:
+  DeveloperPeteArn:
+    Description: DeveloperPete Arn
+    Export:
+      Name: !Join ['', [!Ref 'AWS::StackName', 'DeveloperPeteArn']]
+    Value: !GetAtt DeveloperPete.Arn
