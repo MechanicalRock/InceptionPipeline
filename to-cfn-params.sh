@@ -16,7 +16,6 @@ if [ -z "$LOCAL_JQ" ]; then
     docker run -t --rm --name jq endeveit/docker-jq \
         sh -c "echo '$JSON' |jq -r '$QUERY'"
 else
-    echo $JQ_CMD
     echo "$JSON" | $JQ_CMD
 fi
 
