@@ -1,0 +1,15 @@
+version: 0.2
+  
+phases:
+  build:
+    commands:
+      # validate the templates
+      - aws cloudformation validate-template --template-body file://cfn-templates/master.yml
+      - aws cloudformation validate-template --template-body file://cfn-templates/child.yml
+      - aws cloudformation validate-template --template-body file://cfn-templates/packageCfnCodeBuild.yml
+
+      # Package the templates and deploy into S3
+      - aws cloudformation package --template-file cfn-templates/master.yml --s3-bucket ${S3_BUCKET_NAME} --s3-prefix 'cfn-templates' --output-template-file master.output.yml
+artifacts:
+ files:
+  - master.output.yml

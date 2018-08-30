@@ -1,0 +1,9 @@
+Parameters:
+  BucketName:
+    Type: String
+    Description: The name of the bucket to create.
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName

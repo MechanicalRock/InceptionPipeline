@@ -41,7 +41,10 @@ Resources:
         - Action: ['sts:AssumeRole']
           Effect: Allow
           Principal:
-            Service: [cloudformation.amazonaws.com]
+            Service:
+              - cloudformation.amazonaws.com
+              - codebuild.amazonaws.com
+
         Version: '2012-10-17'
       Path: /
       Policies:
@@ -56,6 +59,7 @@ Resources:
                   - 'codepipeline:*'
                   - 'iam:*'
                   - 's3:*'
+                  - 'logs:*'
                 Effect: Allow
                 Resource: '*'
       RoleName: !Ref CloudFormationDeployActionRoleName 
@@ -100,6 +104,7 @@ Resources:
                   - cloudformation:CreateStack
 
                   - 'iam:PassRole'
+
                 Resource: '*'
                 Effect: Allow
             Version: 2012-10-17
@@ -148,6 +153,65 @@ Resources:
                 TemplateConfiguration: !Join ['', [!Ref RepositoryName, 'Source', '::aws_seed.json']]
                 TemplatePath: !Join ['', [!Ref RepositoryName, 'Source', '::aws_seed.yml']]
               InputArtifacts:
+                - Name: !Join ['', [!Ref RepositoryName, 'Source']]
+              RunOrder: 1
+        - Name: 'PackageCfnTemplates'
+          Actions:
+            - Name: 'DeployPackageCfnCodeBuildProject'
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE 
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt [CloudFormationDeployActionRole, Arn]
+                StackName: !Sub "${AWS::StackName}-PackageCfnCodeBuild"
+                # TemplateConfiguration: !Join ['', [!Ref RepositoryName, 'Source', '::cfn-templates/packageCfnCodeBuild.json']]
+                TemplatePath: !Join ['', [!Ref RepositoryName, 'Source', '::cfn-templates/packageCfnCodeBuild.yml']]
+                ParameterOverrides:
+                  !Sub
+                    - |
+                      {"ProjectName": "${AWS::StackName}-PackageCfn",
+                       "CodeBuildRoleArn": "${CodeBuildRoleArn}",
+                       "S3BucketName": "${CodePipelineS3BucketName}" }
+                    - CodeBuildRoleArn: !GetAtt CloudFormationDeployActionRole.Arn
+                      S3BucketName: !Ref CodePipelineS3BucketName
+              InputArtifacts:
+                - Name: !Join ['', [!Ref RepositoryName, 'Source']]
+              RunOrder: 1
+            - Name: 'PackageCfnTemplates'
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              Configuration:
+                ProjectName:
+                  !Sub "${AWS::StackName}-PackageCfn"
+              InputArtifacts:
+                - Name: !Join ['', [!Ref RepositoryName, 'Source']]
+              OutputArtifacts:
+                - Name: CFNTemplateArtifact
+              RunOrder: 2
+        - Name: 'DeployDev'
+          Actions:
+            - Name: 'DeployDevInfrastructure'
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE 
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt [CloudFormationDeployActionRole, Arn]
+                StackName: !Sub "${AWS::StackName}-master"
+                TemplateConfiguration: !Join ['', [!Ref RepositoryName, 'Source', '::dev/master.json']]
+                TemplatePath: CFNTemplateArtifact::master.output.yml
+              InputArtifacts:
+                - Name: CFNTemplateArtifact
                 - Name: !Join ['', [!Ref RepositoryName, 'Source']]
               RunOrder: 1
 

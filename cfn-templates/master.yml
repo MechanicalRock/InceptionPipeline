@@ -1,0 +1,14 @@
+Parameters:
+  BucketName:
+    Type: String
+    Description: The name of the bucket to create
+
+Resources:
+  MyBucketStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: child.yml
+      Parameters:
+        # Demonstrates passing parameters into the nested stacks
+        # In the same mechanism, outputs from one stack can be used as inputs for another.
+        BucketName: !Ref BucketName
