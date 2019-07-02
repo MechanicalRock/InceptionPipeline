@@ -1,10 +1,11 @@
 {
-    "Parameters": {
-        "RepositoryName": "@@RepositoryName@@",
-        "CodePipelineS3BucketName": "@@CodePipelineS3BucketName@@",
-        "CloudFormationDeployActionRoleName": "@@CloudFormationDeployActionRoleName@@",
-        "CodePipelineRoleName": "@@CodePipelineRole@@",
-        "CodePipelineName": "@@CodePipelineName@@",
-        "StageAdministerPipelineStackName": "@@StageAdministerPipelineStackName@@"
-    }
+  "Parameters": {
+    "RepositoryName": "@@RepositoryName@@",
+    "CodePipelineS3BucketName": "@@CodePipelineS3BucketName@@",
+    "CloudFormationDeployActionRoleName": "@@CloudFormationDeployActionRoleName@@",
+    "CodePipelineRoleName": "@@CodePipelineRole@@",
+    "CodePipelineName": "@@CodePipelineName@@",
+    "StageAdministerPipelineStackName": "@@StageAdministerPipelineStackName@@",
+    "StageInfrastructureDeployCloudTrailStackName": "@@StageInfrastructureDeployCloudTrailStackName@@"
+  }
 }

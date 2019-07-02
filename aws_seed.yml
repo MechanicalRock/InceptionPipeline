@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Parameters: 
-  RepositoryName: 
+Parameters:
+  RepositoryName:
     Type: String
     Description: The name of the CodeCommit repository to create
   CodePipelineS3BucketName:
@@ -19,7 +19,10 @@ Parameters:
   StageAdministerPipelineStackName:
     Type: String
     Description: The name of this stack that is creating the pipeline. If the names do not match then the pipeline will not be able to update itself.
-                                                  
+  StageInfrastructureDeployCloudTrailStackName:
+    Type: String
+    Description: The name of the stack that will deploy the CloudTrail infrastructure.
+
 Resources:
 
   CodeCommitRepository:
@@ -50,7 +53,6 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Action:
-                  - 'codebuild:*'
                   - 'codecommit:*'
                   - 'cloudformation:*'
                   - 'codepipeline:*'
@@ -58,7 +60,52 @@ Resources:
                   - 's3:*'
                 Effect: Allow
                 Resource: '*'
-      RoleName: !Ref CloudFormationDeployActionRoleName 
+      RoleName: !Ref CloudFormationDeployActionRoleName
+
+  CapabilityGlobalCloudTrailDeployerRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [cloudformation.amazonaws.com]
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+        - PolicyName: CloudFormationRole
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - 'iam:CreateRole'
+                  - 'iam:DeleteRole'
+                  - 'iam:DeleteRolePolicy'
+                  - 'iam:GetRole'
+                  - 'iam:PutRolePolicy'
+                  - 'iam:UpdateAssumeRolePolicy'
+                  - 'kms:CreateAlias'
+                  - 'kms:CreateKey'
+                  - 'kms:DeleteAlias'
+                  - 'kms:DeleteKey'
+                  - 'kms:ListAliases'
+                  - 's3:CreateBucket'
+                  - 's3:DeleteBucket'
+                  - 's3:DeleteBucketPolicy'
+                  - 's3:GetBucketLocation'
+                  - 's3:ListAllMyBuckets'
+                  - 's3:PutAccelerateConfiguration'
+                  - 's3:PutAccountPublicAccessBlock'
+                  - 's3:PutBucketAcl'
+                  - 's3:PutBucketPolicy'
+                  - 's3:PutBucketPublicAccessBlock'
+                  - 's3:PutBucketVersioning'
+                  - 's3:PutEncryptionConfiguration'
+                  - 's3:PutLifecycleConfiguration'
+                Effect: Allow
+                Resource: '*'
+      RoleName: 'CapabilityGlobalCloudTrailDeployerRole'
 
   CodePipelineRole:
     Type: 'AWS::IAM::Role'
@@ -77,38 +124,33 @@ Resources:
           PolicyDocument:
             Statement:
               - Action:
-                  - codecommit:GetBranch
-                  - codecommit:GetCommit
-                  - codecommit:UploadArchive
-                  - codecommit:GetUploadArchiveStatus
-                  - codecommit:CancelUploadArchive
-
-                  - codebuild:BatchGetBuilds
-                  - codebuild:StartBuild
-
-                  - s3:GetObject
-                  - s3:GetObjectVersion
-                  - s3:GetBucketVersioning
-                  - s3:PutObject
-
-                  - cloudformation:GetTemplate
+                  - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStackEvents
                   - cloudformation:DescribeStackResource
                   - cloudformation:DescribeStackResources
-                  - cloudformation:DescribeStackEvents
                   - cloudformation:DescribeStacks
+                  - cloudformation:GetTemplate
                   - cloudformation:UpdateStack
-                  - cloudformation:CreateStack
-
-                  - 'iam:PassRole'
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+                  - codecommit:CancelUploadArchive
+                  - codecommit:GetBranch
+                  - codecommit:GetCommit
+                  - codecommit:GetUploadArchiveStatus
+                  - codecommit:UploadArchive
+                  - iam:PassRole
+                  - s3:GetBucketVersioning
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObject
                 Resource: '*'
                 Effect: Allow
             Version: 2012-10-17
-      RoleName: !Ref CodePipelineRoleName 
+      RoleName: !Ref CodePipelineRoleName
 
   CodePipeline:
     Type: 'AWS::CodePipeline::Pipeline'
-    DependsOn: 
-      - CodePipelineRole
     Properties:
       ArtifactStore:
         Type: S3
@@ -141,12 +183,30 @@ Resources:
                 Provider: CloudFormation
                 Version: '1'
               Configuration:
-                ActionMode: REPLACE_ON_FAILURE 
+                ActionMode: REPLACE_ON_FAILURE
                 Capabilities: CAPABILITY_NAMED_IAM
                 RoleArn: !GetAtt [CloudFormationDeployActionRole, Arn]
                 StackName: !Ref StageAdministerPipelineStackName
                 TemplateConfiguration: !Join ['', [!Ref RepositoryName, 'Source', '::aws_seed.json']]
                 TemplatePath: !Join ['', [!Ref RepositoryName, 'Source', '::aws_seed.yml']]
+              InputArtifacts:
+                - Name: !Join ['', [!Ref RepositoryName, 'Source']]
+              RunOrder: 1
+        - Name: 'Infrastructure'
+          Actions:
+            - Name: 'DeployCloudTrailInfrastructure'
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt CapabilityGlobalCloudTrailDeployerRole.Arn
+                StackName: !Ref StageInfrastructureDeployCloudTrailStackName
+                TemplateConfiguration: !Join ['', [!Ref RepositoryName, 'Source', '::infrastructure/capability-global-cloudtrail.json']]
+                TemplatePath: !Join ['', [!Ref RepositoryName, 'Source', '::infrastructure/capability-global-cloudtrail.yml']]
               InputArtifacts:
                 - Name: !Join ['', [!Ref RepositoryName, 'Source']]
               RunOrder: 1

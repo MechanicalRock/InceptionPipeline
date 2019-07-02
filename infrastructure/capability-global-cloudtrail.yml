@@ -148,6 +148,9 @@ Resources:
                 's3:x-amz-acl': bucket-owner-full-control
 
 Outputs:
+  BucketName:
+    Description: The Name of the CloudTrail logs Bucket
+    Value: !Ref Bucket
   BucketArn:
     Description: The ARN of the CloudTrail logs Bucket
     Value: !GetAtt Bucket.Arn
