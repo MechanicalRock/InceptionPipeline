@@ -1,0 +1,9 @@
+{
+  "Parameters": {
+    "ParamBucketPrefix": "@@BucketNamePrefix@@",
+    "ParamKmsKeyAlias": "@@GlobalCloudTrailKeyAliasName@@",
+    "ParamMasterAccount": "@@ParamMasterAccountId@@",
+    "ParamTransitionLogsToGlacierAfterThisManyDays": "14",
+    "ParamExpireLogsFromGlacierAfterThisManyDays": "180"
+  }
+}

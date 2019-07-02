@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploys resources used by the AWS Organisations powered CloudTrail trail.
+
+Parameters:
+  ParamBucketPrefix:
+    Type: String
+  ParamKmsKeyAlias:
+    Type: String
+  ParamMasterAccount:
+    Type: String
+  ParamTransitionLogsToGlacierAfterThisManyDays:
+    Type: Number
+  ParamExpireLogsFromGlacierAfterThisManyDays:
+    Type: Number
+
+Resources:
+
+  KmsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: 'KMS Key used to encrypt CloudTrail logs'
+      EnableKeyRotation: false
+      Enabled: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: 'KmsKeyPolicy'
+        Statement:
+          - Sid: Enable Administration of the CMK
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/CapabilityGlobalCloudTrailDeployerRole'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow CloudTrail to encrypt logs
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 'kms:GenerateDataKey*'
+            Resource: '*'
+            Condition:
+              StringLike:
+                'kms:EncryptionContext:aws:cloudtrail:arn':
+                  - !Sub 'arn:aws:cloudtrail:*:${ParamMasterAccount}:trail/*'
+          - Sid: Allow CloudTrail logs to only be decrypted by dedicated role
+            Effect: Allow
+            Principal:
+              AWS:
+                - !GetAtt GlobalCloudTrailReadRole.Arn
+            Action: 'kms:Decrypt'
+            Resource: '*'
+            Condition:
+              'Null':
+                'kms:EncryptionContext:aws:cloudtrail:arn': 'false'
+          - Sid: Allow CloudTrail access to the key
+            Effect: Allow
+            Principal:
+                Service: cloudtrail.amazonaws.com
+            Action: 'kms:DescribeKey'
+            Resource: '*'
+      KeyUsage: ENCRYPT_DECRYPT
+      PendingWindowInDays: 30
+
+  KmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ParamKmsKeyAlias}'
+      TargetKeyId: !Ref KmsKey
+
+  GlobalCloudTrailReadRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'AllowAnyoneInThisAccountToAssumeThisRole'
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+                - !Ref ParamMasterAccount
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: GlobalCloudTrailReadRole
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'kms:Decrypt'
+                Resource: '*'
+      RoleName: GlobalCloudTrailReadRole
+
+  Bucket:
+    DeletionPolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      AccelerateConfiguration:
+        AccelerationStatus: Enabled # Suspended
+      AccessControl: LogDeliveryWrite	# https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              KMSMasterKeyID: !Ref KmsKey
+              SSEAlgorithm: 'aws:kms'
+      BucketName: !Sub '${ParamBucketPrefix}-cloudtrail'
+      LifecycleConfiguration:
+        Rules:
+          - Id: "TransitionToGlacier"
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+            Status: Enabled # Disabled
+            Transitions:
+              - StorageClass: GLACIER # DEEP_ARCHIVE | GLACIER | INTELLIGENT_TIERING | ONEZONE_IA | STANDARD_IA
+                TransitionInDays: !Ref ParamTransitionLogsToGlacierAfterThisManyDays
+          - Id: "DeleteLogsFromGlacier"
+            ExpirationInDays: !Ref ParamExpireLogsFromGlacierAfterThisManyDays
+            Status: Enabled # Disabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+      VersioningConfiguration:
+        Status: Enabled # Suspended
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AWSCloudTrailAclCheck20131101
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:GetBucketAcl'
+            Resource: !GetAtt Bucket.Arn
+          - Sid: AWSCloudTrailWrite20131101
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:PutObject'
+            Resource: # Allow all accounts under the organisation
+              - !Sub '${Bucket.Arn}/*'
+            Condition:
+              StringEquals:
+                's3:x-amz-acl': bucket-owner-full-control
+
+Outputs:
+  BucketArn:
+    Description: The ARN of the CloudTrail logs Bucket
+    Value: !GetAtt Bucket.Arn
+  KmsKeyArn:
+    Description: The ARN of the KMS Key used to encrypt the logs
+    Value: !GetAtt KmsKey.Arn
+  KmsKeyId:
+    Description: The ID of the KMS Key used to encrypt the logs
+    Value: !Ref KmsKey
+  GlobalCloudTrailReadRoleArn:
+    Description: The ARN of the role that can be assumed to read the CloudTrail logs
+    Value: !GetAtt GlobalCloudTrailReadRole.Arn
